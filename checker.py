@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 from playwright.async_api import async_playwright, TimeoutError as PWTimeoutError
 
 load_dotenv()
-
 # ── Config ────────────────────────────────────────────────────────────────────
 EMAIL = os.environ["ZHS_EMAIL"]
 PASSWORD = os.environ["ZHS_PASSWORD"]
@@ -109,7 +108,6 @@ async def check_slots(page) -> list[dict]:
 
     # Rewind to the very first court
     while not await prev_btn.is_disabled():
-        print("....Rewinding carousel to the first court…")
         await prev_btn.click()
         await page.locator("li button").first.wait_for(timeout=5000)
 
@@ -126,7 +124,6 @@ async def check_slots(page) -> list[dict]:
 
             # Build today's label as it appears on the page, e.g. "17. April"
             today = date.today()
-            print("today:", today, "today.month:", today.month)
             today_label = f"{today.day}. {GERMAN_MONTHS[today.month]}"
             # Each date section is a div with these classes containing
             # [0] a heading div with the date text, [1] a div with the slot list.
@@ -137,7 +134,6 @@ async def check_slots(page) -> list[dict]:
                 section = date_sections.nth(s)
                 date_heading = await section.locator("> div").first.inner_text()
                 date_heading = date_heading.strip().replace("\n", " ")
-
                 # Only process today's section
                 if today_label not in date_heading:
                     continue
@@ -176,7 +172,7 @@ async def check_slots(page) -> list[dict]:
 # ── Main loop ─────────────────────────────────────────────────────────────────
 async def run() -> None:
     notified_slots: set[str] = set()  # avoid duplicate notifications
-
+   # print("notified slots:", notified_slots)
     async with async_playwright() as pw:
         headless = os.getenv("HEADLESS", "true").lower() != "false"
         browser = await pw.chromium.launch(headless=headless, slow_mo=50 if not headless else 0)
@@ -195,12 +191,11 @@ async def run() -> None:
         while True:
             try:
                 slots = await check_slots(page)
-
                 new_slots = [
                     s for s in slots
                     if f"{s['court']}|{s['time']}|{s['date_label']}" not in notified_slots
                 ]
-
+               # print("new_slots:", new_slots)
                 if new_slots:
                     lines = "\n".join(
                         f"  • {s['court']}  —  {s['time']}  ({s['date_label']})"
