@@ -37,8 +37,8 @@ cp .env.example .env
 Edit `.env`:
 
 ```
-ZHS_EMAIL=your_zhs_email
-ZHS_PASSWORD=your_zhs_password
+ZHS_EMAIL=your_zh_email
+ZHS_PASSWORD=your_zh_password
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 CHECK_INTERVAL_SECONDS=300
@@ -78,8 +78,8 @@ Go to your repo on GitHub → **Settings → Secrets and variables → Actions �
 
 | Secret name | Value |
 |---|---|
-| `ZHS_EMAIL` | Your ZHS login email |
-| `ZHS_PASSWORD` | Your ZHS password |
+| `ZHS_EMAIL` | Your login email |
+| `ZHS_PASSWORD` | Your password |
 | `TELEGRAM_BOT_TOKEN` | Your Telegram bot token |
 | `TELEGRAM_CHAT_ID` | Your Telegram chat ID |
 
@@ -99,8 +99,8 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 
 | Variable | Default | Description |
 |---|---|---|
-| `ZHS_EMAIL` | required | ZHS login email |
-| `ZHS_PASSWORD` | required | ZHS login password |
+| `ZHS_EMAIL` | required | login email |
+| `ZHS_PASSWORD` | required | login password |
 | `TELEGRAM_BOT_TOKEN` | required | Telegram bot token from @BotFather |
 | `TELEGRAM_CHAT_ID` | required | Your Telegram chat ID |
 | `CHECK_INTERVAL_SECONDS` | `300` | Seconds between checks (loop mode only) |
