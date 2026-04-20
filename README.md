@@ -1,6 +1,6 @@
 # tennis-zh
 
-Monitors the ZHS Munich tennis booking page and sends a Telegram message the moment a court slot opens up from 17:00 onwards.
+Monitors the tennis booking page and sends a Telegram message the moment a court slot opens up from 17:00 onwards.
 
 ## Setup
 
