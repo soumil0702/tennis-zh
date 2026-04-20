@@ -2,13 +2,13 @@ name: Tennis Slot Checker
 
 on:
   schedule:
-    # Every 10 minutes between 15:00–20:00 UTC = 17:00–22:00 Munich time (UTC+2 / CEST)
-    - cron: '*/10 15-20 * * *'
+    # Every 5 minutes between 15:00–20:00 UTC = 17:00–22:00 Munich time (UTC+2 / CEST)
+    - cron: '*/5 15-20 * * *'
   workflow_dispatch:  # Adds a "Run workflow" button on GitHub so you can trigger it manually
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
