@@ -1,6 +1,6 @@
 # tennis-zh
 
-Monitors the [ZHS München tennis booking page](https://kurse.zhs-muenchen.de/de/product-offers/21114da0-4246-42b1-bab6-8d7ac49bb14f) and sends a Telegram notification the moment a clay court slot opens from 17:00 onwards.
+Monitors the [shz  tennis booking page](https://kurse.zhs-muenchen.de/de/product-offers/21114da0-4246-42b1-bab6-8d7ac49bb14f) and sends a Telegram notification the moment a clay court slot opens from 17:00 onwards.
 
 - Checks all clay courts (Tennisplatz 2–17), skips Kunststoff courts (20/21/22)
 - Filters to today's date and slots starting at 17:00 or later
