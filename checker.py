@@ -169,10 +169,25 @@ async def check_slots(page) -> list[dict]:
     return available_slots
 
 
+# ── Shared notification helper ────────────────────────────────────────────────
+def notify_slots(slots: list[dict]) -> None:
+    lines = "\n".join(
+        f"  • {s['court']}  —  {s['time']}  ({s['date_label']})"
+        for s in slots
+    )
+    message = (
+        f"🎾 <b>Tennis slot available!</b>\n\n"
+        f"{lines}\n\n"
+        f"<a href='{BOOKING_URL}'>Book now →</a>"
+    )
+    send_telegram(message)
+    log.info("Notified: %d slot(s).", len(slots))
+
+
 # ── Main loop ─────────────────────────────────────────────────────────────────
 async def run() -> None:
-    notified_slots: set[str] = set()  # avoid duplicate notifications
-   # print("notified slots:", notified_slots)
+    run_once = os.getenv("RUN_ONCE", "false").lower() == "true"
+
     async with async_playwright() as pw:
         headless = os.getenv("HEADLESS", "true").lower() != "false"
         browser = await pw.chromium.launch(headless=headless, slow_mo=50 if not headless else 0)
@@ -182,50 +197,60 @@ async def run() -> None:
         # Log in once; session is kept in `context`
         await login(page)
 
-        log.info(
-            "Starting check loop every %d seconds. Looking for slots from %02d:00…",
-            CHECK_INTERVAL,
-            NOTIFY_FROM_HOUR,
-        )
-
-        while True:
+        if run_once:
+            # ── Single-run mode (used by GitHub Actions) ──────────────────────
+            # Checks once, sends a notification if any slots are found, then exits.
+            # No deduplication — if a slot is still open on the next scheduled run,
+            # you'll be notified again (intentional: better to over-notify than miss it).
+            log.info("Single-run mode. Looking for slots from %02d:00…", NOTIFY_FROM_HOUR)
             try:
                 slots = await check_slots(page)
-                new_slots = [
-                    s for s in slots
-                    if f"{s['court']}|{s['time']}|{s['date_label']}" not in notified_slots
-                ]
-               # print("new_slots:", new_slots)
-                if new_slots:
-                    lines = "\n".join(
-                        f"  • {s['court']}  —  {s['time']}  ({s['date_label']})"
-                        for s in new_slots
-                    )
-                    message = (
-                        f"🎾 <b>Tennis slot available!</b>\n\n"
-                        f"{lines}\n\n"
-                        f"<a href='{BOOKING_URL}'>Book now →</a>"
-                    )
-                    send_telegram(message)
-                    log.info("Notified: %d new slot(s).", len(new_slots))
-
-                    for s in new_slots:
-                        notified_slots.add(f"{s['court']}|{s['time']}|{s['date_label']}")
+                if slots:
+                    notify_slots(slots)
                 else:
-                    log.info(
-                        "No open slots from %02d:00 found across all courts. Waiting %ds…",
-                        NOTIFY_FROM_HOUR, CHECK_INTERVAL,
-                    )
-
+                    log.info("No open slots from %02d:00 found.", NOTIFY_FROM_HOUR)
             except Exception as exc:
                 log.error("Error during check: %s", exc, exc_info=True)
-                # Re-login on session errors
-                try:
-                    await login(page)
-                except Exception:
-                    pass
 
-            await asyncio.sleep(CHECK_INTERVAL)
+        else:
+            # ── Loop mode (used locally on your Mac) ──────────────────────────
+            # Runs continuously, re-checking every CHECK_INTERVAL seconds.
+            # Tracks notified slots so you don't get duplicate Telegram messages
+            # for the same slot within the same session.
+            notified_slots: set[str] = set()
+
+            log.info(
+                "Starting check loop every %d seconds. Looking for slots from %02d:00…",
+                CHECK_INTERVAL,
+                NOTIFY_FROM_HOUR,
+            )
+
+            while True:
+                try:
+                    slots = await check_slots(page)
+                    new_slots = [
+                        s for s in slots
+                        if f"{s['court']}|{s['time']}|{s['date_label']}" not in notified_slots
+                    ]
+                    if new_slots:
+                        notify_slots(new_slots)
+                        for s in new_slots:
+                            notified_slots.add(f"{s['court']}|{s['time']}|{s['date_label']}")
+                    else:
+                        log.info(
+                            "No open slots from %02d:00 found across all courts. Waiting %ds…",
+                            NOTIFY_FROM_HOUR, CHECK_INTERVAL,
+                        )
+
+                except Exception as exc:
+                    log.error("Error during check: %s", exc, exc_info=True)
+                    # Re-login on session errors
+                    try:
+                        await login(page)
+                    except Exception:
+                        pass
+
+                await asyncio.sleep(CHECK_INTERVAL)
 
 
 if __name__ == "__main__":

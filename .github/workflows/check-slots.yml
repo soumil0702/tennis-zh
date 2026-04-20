@@ -1,0 +1,48 @@
+name: Tennis Slot Checker
+
+on:
+  schedule:
+    # Every 10 minutes between 15:00–20:00 UTC = 17:00–22:00 Munich time (UTC+2 / CEST)
+    - cron: '*/10 15-20 * * *'
+  workflow_dispatch:  # Adds a "Run workflow" button on GitHub so you can trigger it manually
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+
+      - name: Install Playwright Chromium
+        run: playwright install chromium --with-deps
+
+      - name: Run slot checker (single-run mode)
+        env:
+          ZHS_EMAIL: ${{ secrets.ZHS_EMAIL }}
+          ZHS_PASSWORD: ${{ secrets.ZHS_PASSWORD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          HEADLESS: 'true'
+          RUN_ONCE: 'true'
+        run: python3 checker.py
