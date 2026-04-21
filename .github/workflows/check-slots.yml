@@ -2,10 +2,10 @@ name: Tennis Slot Checker
 
 on:
   schedule:
-    # Every 15 minutes, 01:00–16:00 Munich time (CEST = UTC+2)
+    # Every 5 minutes, 01:00–16:00 Munich time (CEST = UTC+2)
     # 01:00 CEST = 23:00 UTC (previous day), so we need two lines to cover the UTC midnight crossover
-    - cron: '*/15 23 * * *'   # covers 01:00–01:45 CEST
-    - cron: '*/15 0-14 * * *' # covers 02:00–16:00 CEST
+    - cron: '*/5 23 * * *'   # covers 01:00–01:45 CEST
+    - cron: '*/5 0-14 * * *' # covers 02:00–16:00 CEST
   workflow_dispatch:  # Adds a "Run workflow" button on GitHub so you can trigger it manually
 
 jobs:
