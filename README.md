@@ -114,3 +114,5 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 - `.env` is gitignored — your credentials never leave your machine.
 - The script re-authenticates automatically if the ZHS session expires.
 - Clay courts only: Tennisplatz 20/21/22 (Kunststoff) are skipped automatically.
+- checker.pygold (is the gold version that works in both ci (scheduled), terminal )...the issue is that the scheduled runs dont really work properly...the freuqncy is really bad
+
