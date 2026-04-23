@@ -2,15 +2,20 @@ name: Tennis Slot Checker
 
 on:
   schedule:
-    # Every 5 minutes, 01:00–16:00 Munich time (CEST = UTC+2)
-    # 01:00 CEST = 23:00 UTC (previous day), so we need two lines to cover the UTC midnight crossover
-    - cron: '*/5 23 * * *'   # covers 01:00–01:45 CEST
-    - cron: '*/5 0-14 * * *' # covers 02:00–16:00 CEST
+    # Every 3 hours — each job runs for 3.5 hours, so there is always an active job
+    # with a ~0.5 hour overlap between old and new (overlap = brief duplicate notifications)
+    # Window: 01:00–16:00 Munich (CEST = UTC+2) = 23:00–14:00 UTC (crosses midnight)
+    - cron: '0 23 * * *'  # 01:00 CEST
+    - cron: '0 2 * * *'   # 04:00 CEST
+    - cron: '0 5 * * *'   # 07:00 CEST
+    - cron: '0 8 * * *'   # 10:00 CEST
+    - cron: '0 11 * * *'  # 13:00 CEST
   workflow_dispatch:  # Adds a "Run workflow" button on GitHub so you can trigger it manually
 
 jobs:
   check:
     runs-on: ubuntu-22.04
+    timeout-minutes: 240  # 4-hour safety cap (GitHub hard limit is 6h)
 
     steps:
       - name: Checkout code
@@ -39,12 +44,12 @@ jobs:
       - name: Install Playwright Chromium
         run: playwright install chromium --with-deps
 
-      - name: Run slot checker (single-run mode)
+      - name: Run slot checker (loop mode, 3.5 h max)
         env:
           ZHS_EMAIL: ${{ secrets.ZHS_EMAIL }}
           ZHS_PASSWORD: ${{ secrets.ZHS_PASSWORD }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           HEADLESS: 'true'
-          RUN_ONCE: 'true'
+          MAX_RUNTIME_SECONDS: '12600'  # 3.5 hours
         run: python3 checker.py

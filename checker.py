@@ -21,6 +21,7 @@ PASSWORD = os.environ["ZHS_PASSWORD"]
 TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL_SECONDS", "300"))
+MAX_RUNTIME = int(os.getenv("MAX_RUNTIME_SECONDS", "0"))  # 0 = run forever (local); set >0 in CI
 
 BOOKING_URL = (
     "https://kurse.zhs-muenchen.de/de/product-offers/"
@@ -213,17 +214,23 @@ async def run() -> None:
                 log.error("Error during check: %s", exc, exc_info=True)
 
         else:
-            # ── Loop mode (used locally on your Mac) ──────────────────────────
+            # ── Loop mode (local Mac and CI long-running) ─────────────────────
             # Runs continuously, re-checking every CHECK_INTERVAL seconds.
             # Tracks notified slots so you don't get duplicate Telegram messages
             # for the same slot within the same session.
+            # Exits cleanly after MAX_RUNTIME_SECONDS if set (used by CI to stay
+            # within the GitHub Actions 6-hour job limit).
             notified_slots: set[str] = set()
+            import time as _time
+            start_time = _time.monotonic()
 
             log.info(
                 "Starting check loop every %d seconds. Looking for slots from %02d:00…",
                 CHECK_INTERVAL,
                 NOTIFY_FROM_HOUR,
             )
+            if MAX_RUNTIME:
+                log.info("Will exit after %d seconds (~%.1f hours).", MAX_RUNTIME, MAX_RUNTIME / 3600)
 
             while True:
                 try:
@@ -249,6 +256,10 @@ async def run() -> None:
                         await login(page)
                     except Exception:
                         pass
+
+                if MAX_RUNTIME and (_time.monotonic() - start_time) >= MAX_RUNTIME:
+                    log.info("Max runtime reached (%ds). Exiting cleanly.", MAX_RUNTIME)
+                    break
 
                 await asyncio.sleep(CHECK_INTERVAL)
 
