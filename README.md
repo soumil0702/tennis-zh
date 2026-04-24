@@ -1,7 +1,5 @@
 # tennis-zh
 
-This version has the gold version
-
 
 Monitors the [shz  tennis booking page](https://kurse.zhs-muenchen.de/de/product-offers/21114da0-4246-42b1-bab6-8d7ac49bb14f) and sends a Telegram notification the moment a clay court slot opens from 17:00 onwards.
 
