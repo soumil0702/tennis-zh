@@ -1,10 +1,13 @@
 # tennis-zh
 
+This version has the gold version
+
+
 Monitors the [shz  tennis booking page](https://kurse.zhs-muenchen.de/de/product-offers/21114da0-4246-42b1-bab6-8d7ac49bb14f) and sends a Telegram notification the moment a clay court slot opens from 17:00 onwards.
 
 - Checks all clay courts (Tennisplatz 2–17), skips Kunststoff courts (20/21/22)
 - Filters to today's date and slots starting at 17:00 or later
-- Two run modes: **loop mode** (local Mac) and **single-run mode** (GitHub Actions CI)
+- Two run modes: **loop mode** (local Mac and GitHub Actions CI)
 
 ---
 
@@ -70,7 +73,7 @@ Stop it with `kill <PID>`. Watch the log with `tail -f checker.log`.
 
 ## Option B — GitHub Actions (runs automatically in the cloud)
 
-The workflow at `.github/workflows/check-slots.yml` runs the checker automatically every 15 minutes from 01:00–16:00 Munich time (CEST), with no Mac required.
+The workflow at `.github/workflows/check-slots.yml` runs the checker automatically from 01:00–16:00 Munich time (CEST), with no Mac required. It uses a 3-hour cron schedule, with each job running in loop mode for 3.5 hours — ensuring continuous coverage with a small overlap.
 
 ### 1 — Add repository secrets
 
@@ -91,7 +94,7 @@ The workflow activates automatically once `.github/workflows/check-slots.yml` is
 
 On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to test it immediately.
 
-> **Note:** In single-run mode (CI), there is no deduplication between runs. If a slot stays open, you'll receive a notification every 15 minutes until you book it — this is intentional.
+> **Note:** Each CI job runs in loop mode with deduplication within the session. Across job restarts (every 3 hours) you may get re-notified for slots that are still open — this is intentional.
 
 ---
 
@@ -105,7 +108,8 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 | `TELEGRAM_CHAT_ID` | required | Your Telegram chat ID |
 | `CHECK_INTERVAL_SECONDS` | `300` | Seconds between checks (loop mode only) |
 | `HEADLESS` | `true` | Set to `false` to watch the browser (local only) |
-| `RUN_ONCE` | `false` | Set to `true` to check once and exit (used by CI) |
+| `RUN_ONCE` | `false` | Set to `true` to check once and exit (single-shot use) |
+| `MAX_RUNTIME_SECONDS` | `0` | Exit after N seconds (0 = run forever). Set to `12600` in CI (3.5 h) |
 
 ---
 
@@ -114,3 +118,4 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 - `.env` is gitignored — your credentials never leave your machine.
 - The script re-authenticates automatically if the ZHS session expires.
 - Clay courts only: Tennisplatz 20/21/22 (Kunststoff) are skipped automatically.
+
