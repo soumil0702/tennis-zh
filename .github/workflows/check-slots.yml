@@ -10,6 +10,7 @@ on:
     - cron: '0 5 * * *'   # 07:00 CEST
     - cron: '0 8 * * *'   # 10:00 CEST
     - cron: '0 11 * * *'  # 13:00 CEST
+    - cron: '0 14 * * *'  # 16:00 CEST
   workflow_dispatch:  # Adds a "Run workflow" button on GitHub so you can trigger it manually
 
 jobs:
