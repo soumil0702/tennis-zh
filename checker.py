@@ -20,7 +20,7 @@ EMAIL = os.environ["ZHS_EMAIL"]
 PASSWORD = os.environ["ZHS_PASSWORD"]
 TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
-CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL_SECONDS", "300"))
+CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL_SECONDS", "120"))
 MAX_RUNTIME = int(os.getenv("MAX_RUNTIME_SECONDS", "0"))  # 0 = run forever (local); set >0 in CI
 
 BOOKING_URL = (
