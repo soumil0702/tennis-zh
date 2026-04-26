@@ -8,7 +8,7 @@ import asyncio
 import os
 import re
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 import requests
 from dotenv import load_dotenv
@@ -38,6 +38,44 @@ GERMAN_MONTHS = [
 
 # Courts to skip (Kunststoff — artificial surface, not wanted)
 SKIP_COURTS = {"Tennisplatz 20", "Tennisplatz 21", "Tennisplatz 22"}
+
+
+def _easter(year: int) -> date:
+    """Calculate Easter Sunday for a given year (Anonymous Gregorian algorithm)."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month, day = divmod(114 + h + l - 7 * m, 31)
+    return date(year, month, day + 1)
+
+
+def _bayern_holidays(year: int) -> set[date]:
+    """Return Bayern public holidays relevant to tennis season for a given year."""
+    easter = _easter(year)
+    return {
+        date(year, 5, 1),        # Labour Day (fixed)
+        easter + timedelta(39),  # Ascension Day
+        easter + timedelta(50),  # Whit Monday
+        easter + timedelta(60),  # Corpus Christi
+        date(year, 8, 15),       # Assumption Day (fixed)
+        date(year, 10, 3),       # Day of German Unity (fixed)
+    }
+
+
+def get_min_hour(d: date) -> int:
+    """Return the minimum bookable hour for a given date.
+    Weekends and Bayern public holidays: 13:00 (1 PM) onwards.
+    Regular weekdays: 17:00 (5 PM) onwards.
+    """
+    if d.weekday() >= 5 or d in _bayern_holidays(d.year):
+        return 13
+    return NOTIFY_FROM_HOUR
 
 logging.basicConfig(
     level=logging.INFO,
@@ -114,6 +152,13 @@ async def check_slots(page) -> list[dict]:
 
     available_slots = []
 
+    # Compute today's date label and minimum hour once (same for all courts)
+    today = date.today()
+    today_label = f"{today.day}. {GERMAN_MONTHS[today.month]}"
+    min_hour = get_min_hour(today)
+    log.info("Date: %s — checking slots from %02d:00 (weekend/holiday=%s)",
+             today_label, min_hour, min_hour < NOTIFY_FROM_HOUR)
+
     while True:
         court_name = (await page.locator("h3").first.inner_text()).strip()
         # Skip Kunststoff courts
@@ -123,9 +168,6 @@ async def check_slots(page) -> list[dict]:
         else:
             log.info("Checking court: %s", court_name)
 
-            # Build today's label as it appears on the page, e.g. "17. April"
-            today = date.today()
-            today_label = f"{today.day}. {GERMAN_MONTHS[today.month]}"
             # Each date section is a div with these classes containing
             # [0] a heading div with the date text, [1] a div with the slot list.
             date_sections = page.locator("div.flex.flex-col.gap-y-8")
@@ -152,7 +194,7 @@ async def check_slots(page) -> list[dict]:
                     match = re.search(r"(\d{1,2}):(\d{2})", text)
                     if not match:
                         continue
-                    if int(match.group(1)) < NOTIFY_FROM_HOUR:
+                    if int(match.group(1)) < min_hour:
                         continue
 
                     available_slots.append({
@@ -225,9 +267,8 @@ async def run() -> None:
             start_time = _time.monotonic()
 
             log.info(
-                "Starting check loop every %d seconds. Looking for slots from %02d:00…",
+                "Starting check loop every %d seconds...",
                 CHECK_INTERVAL,
-                NOTIFY_FROM_HOUR,
             )
             if MAX_RUNTIME:
                 log.info("Will exit after %d seconds (~%.1f hours).", MAX_RUNTIME, MAX_RUNTIME / 3600)
@@ -246,7 +287,7 @@ async def run() -> None:
                     else:
                         log.info(
                             "No open slots from %02d:00 found across all courts. Waiting %ds…",
-                            NOTIFY_FROM_HOUR, CHECK_INTERVAL,
+                            get_min_hour(date.today()), CHECK_INTERVAL,
                         )
 
                 except Exception as exc:
