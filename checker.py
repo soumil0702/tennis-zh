@@ -298,8 +298,8 @@ async def run() -> None:
                         log.info("Session expired — re-logging in…")
                         try:
                             await login(page)
-                        except Exception:
-                            pass
+                        except Exception as login_exc:
+                            log.error("Re-login failed: %s", login_exc)
 
                 if MAX_RUNTIME and (_time.monotonic() - start_time) >= MAX_RUNTIME:
                     log.info("Max runtime reached (%ds). Exiting cleanly.", MAX_RUNTIME)
