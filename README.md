@@ -34,7 +34,7 @@ playwright install chromium
 ```bash
 cp .env.example .env
 ```
-
+For telegram bot id and group id message me...you would need to provide this in the .env
 Edit `.env`:
 
 ```
