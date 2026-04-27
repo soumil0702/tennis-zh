@@ -292,11 +292,14 @@ async def run() -> None:
 
                 except Exception as exc:
                     log.error("Error during check: %s", exc, exc_info=True)
-                    # Re-login on session errors
-                    try:
-                        await login(page)
-                    except Exception:
-                        pass
+                    # Only re-login if the session has actually expired
+                    # (i.e. we got redirected back to the login page)
+                    if "login" in page.url:
+                        log.info("Session expired — re-logging in…")
+                        try:
+                            await login(page)
+                        except Exception:
+                            pass
 
                 if MAX_RUNTIME and (_time.monotonic() - start_time) >= MAX_RUNTIME:
                     log.info("Max runtime reached (%ds). Exiting cleanly.", MAX_RUNTIME)
