@@ -131,7 +131,7 @@ async def check_slots(page) -> list[dict]:
     Returns list of dicts with keys: court, time, date_label.
     """
     log.info("Opening booking page…")
-    await page.goto(BOOKING_URL, wait_until="networkidle")
+    await page.goto(BOOKING_URL, wait_until="load")
 
     # Accept cookie banner if it appears
     try:
@@ -148,7 +148,7 @@ async def check_slots(page) -> list[dict]:
     # Rewind to the very first court
     while not await prev_btn.is_disabled():
         await prev_btn.click()
-        await page.locator("li button").first.wait_for(timeout=5000)
+        await page.locator("li button").first.wait_for(timeout=10000)
 
     available_slots = []
 
@@ -207,7 +207,7 @@ async def check_slots(page) -> list[dict]:
             break
         await next_btn.click()
         # Wait for slot buttons to fully reload for the new court before continuing
-        await page.locator("li button").first.wait_for(timeout=5000)
+        await page.locator("li button").first.wait_for(timeout=10000)
 
     return available_slots
 

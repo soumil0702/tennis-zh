@@ -53,4 +53,5 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           HEADLESS: 'true'
           MAX_RUNTIME_SECONDS: '12600'  # 3.5 hours
+          PYTHONUNBUFFERED: '1'  # Flush every log line immediately — prevents missing/delayed log lines in CI
         run: python3 checker.py
