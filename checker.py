@@ -234,7 +234,7 @@ async def run() -> None:
     async with async_playwright() as pw:
         headless = os.getenv("HEADLESS", "true").lower() != "false"
         browser = await pw.chromium.launch(headless=headless, slow_mo=50 if not headless else 0)
-        context = await browser.new_context()
+        context = await browser.new_context(timezone_id="Europe/Berlin")
         page = await context.new_page()
 
         # Log in once; session is kept in `context`
