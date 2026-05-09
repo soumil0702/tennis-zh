@@ -29,6 +29,7 @@ BOOKING_URL = (
 )
 LOGIN_URL = "https://kurse.zhs-muenchen.de/auth/login"
 NOTIFY_FROM_HOUR = 17  # check slots starting from 17:00
+NOTIFY_TO_HOUR = 20    # check slots only until 19:59 (20 means up to 19:59)			
 
 # German month names used in the date label on the page
 GERMAN_MONTHS = [
@@ -127,7 +128,7 @@ async def check_slots(page) -> list[dict]:
     """
     Cycles through every court in the carousel (skipping Kunststoff courts)
     and collects available slots ("Verfügbar", not disabled) with start hour
-    >= NOTIFY_FROM_HOUR.
+    >= NOTIFY_FROM_HOUR and < NOTIFY_TO_HOUR.
     Returns list of dicts with keys: court, time, date_label.
     """
     log.info("Opening booking page…")
@@ -156,8 +157,8 @@ async def check_slots(page) -> list[dict]:
     today = date.today()
     today_label = f"{today.day}. {GERMAN_MONTHS[today.month]}"
     min_hour = get_min_hour(today)
-    log.info("Date: %s — checking slots from %02d:00 (weekend/holiday=%s)",
-             today_label, min_hour, min_hour < NOTIFY_FROM_HOUR)
+    log.info("Date: %s — checking slots from %02d:00 to %02d:00 (weekend/holiday=%s)",
+             today_label, min_hour, NOTIFY_TO_HOUR, min_hour < NOTIFY_FROM_HOUR)
 
     while True:
         court_name = (await page.locator("h3").first.inner_text()).strip()
@@ -194,7 +195,8 @@ async def check_slots(page) -> list[dict]:
                     match = re.search(r"(\d{1,2}):(\d{2})", text)
                     if not match:
                         continue
-                    if int(match.group(1)) < min_hour:
+                    start_hour = int(match.group(1))
+                    if start_hour < min_hour or start_hour >= NOTIFY_TO_HOUR:
                         continue
 
                     available_slots.append({
@@ -245,13 +247,13 @@ async def run() -> None:
             # Checks once, sends a notification if any slots are found, then exits.
             # No deduplication — if a slot is still open on the next scheduled run,
             # you'll be notified again (intentional: better to over-notify than miss it).
-            log.info("Single-run mode. Looking for slots from %02d:00…", NOTIFY_FROM_HOUR)
+            log.info("Single-run mode. Looking for slots from %02d:00 to %02d:00…", NOTIFY_FROM_HOUR, NOTIFY_TO_HOUR)
             try:
                 slots = await check_slots(page)
                 if slots:
                     notify_slots(slots)
                 else:
-                    log.info("No open slots from %02d:00 found.", NOTIFY_FROM_HOUR)
+                    log.info("No open slots from %02d:00 to %02d:00 found.", NOTIFY_FROM_HOUR, NOTIFY_TO_HOUR)
             except Exception as exc:
                 log.error("Error during check: %s", exc, exc_info=True)
 
@@ -286,8 +288,8 @@ async def run() -> None:
                             notified_slots.add(f"{s['court']}|{s['time']}|{s['date_label']}")
                     else:
                         log.info(
-                            "No open slots from %02d:00 found across all courts. Waiting %ds…",
-                            get_min_hour(date.today()), CHECK_INTERVAL,
+                            "No open slots from %02d:00 to %02d:00 found across all courts. Waiting %ds…",
+                            get_min_hour(date.today()), NOTIFY_TO_HOUR, CHECK_INTERVAL,
                         )
 
                 except Exception as exc:
