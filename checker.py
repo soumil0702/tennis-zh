@@ -29,7 +29,7 @@ BOOKING_URL = (
 )
 LOGIN_URL = "https://kurse.zhs-muenchen.de/auth/login"
 NOTIFY_FROM_HOUR = 17  # check slots starting from 17:00
-NOTIFY_TO_HOUR = 20    # check slots only until 19:59 (20 means up to 19:59)			
+NOTIFY_TO_HOUR = 21    # check slots only before 21:00 (exclusive) — no need to notify for late-night slots			
 
 # German month names used in the date label on the page
 GERMAN_MONTHS = [
