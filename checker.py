@@ -1,6 +1,6 @@
 """
-ZHS Tennis Slot Checker
-Monitors https://kurse.zhs-muenchen.de for open tennis courts from 17:00 onwards
+Availability Slot Checker
+Monitors for open fields from 17:00 onwards
 and sends a Telegram notification the moment one appears.
 """
 

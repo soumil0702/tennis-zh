@@ -1,10 +1,10 @@
-# tennis-zh
+# availability-checker
 
 
-Monitors the [shz  tennis booking page](https://kurse.zhs-muenchen.de/de/product-offers/21114da0-4246-42b1-bab6-8d7ac49bb14f) and sends a Telegram notification the moment a clay court slot opens from 17:00 onwards.
+A headless browser automation tool that monitors a booking portal and sends a Telegram notification when a preferred time slot becomes available.
 
-- Checks all clay courts (Tennisplatz 2–17), skips Kunststoff courts (20/21/22)
-- Filters to today's date and slots starting at 17:00 or later
+- Filters by resource type and skips unwanted categories
+- Filters to today's date and slots at or after a configured start time
 - Two run modes: **loop mode** (local Mac and GitHub Actions CI)
 
 ---
@@ -14,7 +14,7 @@ Monitors the [shz  tennis booking page](https://kurse.zhs-muenchen.de/de/product
 ### 1 — Install dependencies
 
 ```bash
-cd tennis-zh
+cd availability-checker
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -34,12 +34,12 @@ playwright install chromium
 ```bash
 cp .env.example .env
 ```
-For telegram bot id and group id message me...you would need to provide this in the .env
+For notification credentials message me — you would need to provide these in the `.env`.
 Edit `.env`:
 
 ```
-ZHS_EMAIL=your_zh_email
-ZHS_PASSWORD=your_zh_password
+SERVICE_EMAIL=your_email
+SERVICE_PASSWORD=your_password
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 CHECK_INTERVAL_SECONDS=300
@@ -79,8 +79,8 @@ Go to your repo on GitHub → **Settings → Secrets and variables → Actions �
 
 | Secret name | Value |
 |---|---|
-| `ZHS_EMAIL` | Your login email |
-| `ZHS_PASSWORD` | Your password |
+| `SERVICE_EMAIL` | Your login email |
+| `SERVICE_PASSWORD` | Your password |
 | `TELEGRAM_BOT_TOKEN` | Your Telegram bot token |
 | `TELEGRAM_CHAT_ID` | Your Telegram chat ID |
 
@@ -100,8 +100,8 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 
 | Variable | Default | Description |
 |---|---|---|
-| `ZHS_EMAIL` | required | login email |
-| `ZHS_PASSWORD` | required | login password |
+| `SERVICE_EMAIL` | required | login email |
+| `SERVICE_PASSWORD` | required | login password |
 | `TELEGRAM_BOT_TOKEN` | required | Telegram bot token from @BotFather |
 | `TELEGRAM_CHAT_ID` | required | Your Telegram chat ID |
 | `CHECK_INTERVAL_SECONDS` | `300` | Seconds between checks (loop mode only) |
@@ -114,6 +114,6 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 ## Notes
 
 - `.env` is gitignored — your credentials never leave your machine.
-- The script re-authenticates automatically if the ZHS session expires.
-- Clay courts only: Tennisplatz 20/21/22 (Kunststoff) are skipped automatically.
+- The script re-authenticates automatically if the session expires.
+- Unwanted resource categories are filtered out automatically based on internal configuration.
 
