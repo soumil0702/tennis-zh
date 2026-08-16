@@ -29,7 +29,7 @@ BOOKING_URL = (
 )
 LOGIN_URL = "https://kurse.zhs-muenchen.de/auth/login"
 NOTIFY_FROM_HOUR = 17  # check slots starting from 17:00
-NOTIFY_TO_HOUR = 21    # check slots only before 21:00 (exclusive) — no need to notify for late-night slots			
+NOTIFY_TO_HOUR = 20    # check slots only before 21:00 (exclusive) — no need to notify for late-night slots			
 
 # German month names used in the date label on the page
 GERMAN_MONTHS = [
@@ -38,7 +38,10 @@ GERMAN_MONTHS = [
 ]
 
 # Courts to skip (Kunststoff — artificial surface, not wanted)
-SKIP_COURTS = {"Tennisplatz 20", "Tennisplatz 21", "Tennisplatz 22"}
+SKIP_COURTS = {
+    "Tennisplatz 2", "Tennisplatz 3", "Tennisplatz 4", "Tennisplatz 5",
+    "Tennisplatz 19", "Tennisplatz 20", "Tennisplatz 21", "Tennisplatz 22",
+}
 
 
 def _easter(year: int) -> date:
@@ -153,12 +156,15 @@ async def check_slots(page) -> list[dict]:
 
     available_slots = []
 
-    # Compute today's date label and minimum hour once (same for all courts)
+    # Build a label→min_hour map for the 3 days visible on the page
     today = date.today()
-    today_label = f"{today.day}. {GERMAN_MONTHS[today.month]}"
-    min_hour = get_min_hour(today)
-    log.info("Date: %s — checking slots from %02d:00 to %02d:00 (weekend/holiday=%s)",
-             today_label, min_hour, NOTIFY_TO_HOUR, min_hour < NOTIFY_FROM_HOUR)
+    dates_to_check = {}
+    for _d in range(3):
+        _target = today + timedelta(_d)
+        _label = f"{_target.day}. {GERMAN_MONTHS[_target.month]}"
+        dates_to_check[_label] = get_min_hour(_target)
+    log.info("Checking %d days: %s — slots up to %02d:00",
+             len(dates_to_check), ", ".join(dates_to_check), NOTIFY_TO_HOUR)
 
     while True:
         court_name = (await page.locator("h3").first.inner_text()).strip()
@@ -178,8 +184,13 @@ async def check_slots(page) -> list[dict]:
                 section = date_sections.nth(s)
                 date_heading = await section.locator("> div").first.inner_text()
                 date_heading = date_heading.strip().replace("\n", " ")
-                # Only process today's section
-                if today_label not in date_heading:
+                # Only process sections for dates we care about
+                matched_min_hour = None
+                for _lbl, _mh in dates_to_check.items():
+                    if _lbl in date_heading:
+                        matched_min_hour = _mh
+                        break
+                if matched_min_hour is None:
                     continue
 
                 slot_buttons = section.locator("li button:not([disabled])")
@@ -196,7 +207,7 @@ async def check_slots(page) -> list[dict]:
                     if not match:
                         continue
                     start_hour = int(match.group(1))
-                    if start_hour < min_hour or start_hour >= NOTIFY_TO_HOUR:
+                    if start_hour < matched_min_hour or start_hour >= NOTIFY_TO_HOUR:
                         continue
 
                     available_slots.append({
@@ -216,13 +227,20 @@ async def check_slots(page) -> list[dict]:
 
 # ── Shared notification helper ────────────────────────────────────────────────
 def notify_slots(slots: list[dict]) -> None:
-    lines = "\n".join(
-        f"  • {s['court']}  —  {s['time']}  ({s['date_label']})"
-        for s in slots
-    )
+    # Group slots by date, preserving the order they were found
+    by_date: dict[str, list[dict]] = {}
+    for s in slots:
+        by_date.setdefault(s["date_label"], []).append(s)
+
+    sections = []
+    for day_label, day_slots in by_date.items():
+        lines = "\n".join(f"  • {s['court']}  —  {s['time']}" for s in day_slots)
+        sections.append(f"<b>{day_label}</b>\n{lines}")
+
+    body = "\n\n".join(sections)
     message = (
         f"🎾 <b>Tennis slot available!</b>\n\n"
-        f"{lines}\n\n"
+        f"{body}\n\n"
         f"<a href='{BOOKING_URL}'>Book now →</a>"
     )
     send_telegram(message)
