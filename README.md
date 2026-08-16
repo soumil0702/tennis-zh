@@ -67,6 +67,23 @@ Stop it with `kill <PID>`. Watch the log with `tail -f checker.log`.
 
 > **Note:** The script pauses when your Mac sleeps. For uninterrupted monitoring use Option B.
 
+### 5 — Debug mode (Playwright Inspector)
+
+To step through the browser automation interactively and inspect what the script is doing:
+
+```bash
+PWDEBUG=1 python3 checker.py
+```
+
+This opens the **Playwright Inspector** — a separate window that lets you pause, step through each action, and inspect page elements in real time. The browser will also run in non-headless mode automatically (no need to set `HEADLESS=false`).
+
+Useful when:
+- The bot stops finding slots unexpectedly and you want to see what the page looks like
+- The website has changed its layout and you need to inspect element selectors
+- You want to verify which courts and dates are being scanned
+
+> **Note:** Debug mode runs in single-step mode — you must click **Resume** in the Inspector to advance. Not suitable for normal monitoring use.
+
 ---
 
 ## Option B — GitHub Actions (runs automatically in the cloud)
