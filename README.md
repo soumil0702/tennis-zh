@@ -42,7 +42,7 @@ SERVICE_EMAIL=your_email
 SERVICE_PASSWORD=your_password
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
-CHECK_INTERVAL_SECONDS=300
+CHECK_INTERVAL_SECONDS=120
 HEADLESS=true
 ```
 
@@ -53,7 +53,7 @@ source .venv/bin/activate
 python3 checker.py
 ```
 
-Checks every `CHECK_INTERVAL_SECONDS` seconds (default 300 = 5 min) until you stop it with `Ctrl+C`.  
+Checks every `CHECK_INTERVAL_SECONDS` seconds (default 120 = 2 min) until you stop it with `Ctrl+C`.  
 Deduplication is active — you won't get re-notified for the same slot within the same session.
 
 To run in the background:
@@ -88,7 +88,8 @@ Useful when:
 
 ## Option B — GitHub Actions (runs automatically in the cloud)
 
-The workflow at `.github/workflows/check-slots.yml` runs the checker automatically from 01:00–16:00 Munich time (CEST), with no Mac required. It uses a 3-hour cron schedule, with each job running in loop mode for 3.5 hours — ensuring continuous coverage with a small overlap.
+The workflow at `.github/workflows/check-slots.yml` runs the checker automatically from 01:00–16:00 Munich time (CEST), with no Mac required. It uses a 3-hour cron schedule, with each job running in loop mode for 3.5 hours — ensuring continuous coverage with a small overlap. The CHECK_INTERVAL_SECONDS is 120s
+
 
 ### 1 — Add repository secrets
 
@@ -121,7 +122,7 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 | `SERVICE_PASSWORD` | required | login password |
 | `TELEGRAM_BOT_TOKEN` | required | Telegram bot token from @BotFather |
 | `TELEGRAM_CHAT_ID` | required | Your Telegram chat ID |
-| `CHECK_INTERVAL_SECONDS` | `300` | Seconds between checks (loop mode only) |
+| `CHECK_INTERVAL_SECONDS` | `120` | Seconds between checks (loop mode only) |
 | `HEADLESS` | `true` | Set to `false` to watch the browser (local only) |
 | `RUN_ONCE` | `false` | Set to `true` to check once and exit (single-shot use) |
 | `MAX_RUNTIME_SECONDS` | `0` | Exit after N seconds (0 = run forever). Set to `12600` in CI (3.5 h) |
