@@ -129,9 +129,43 @@ On the Actions tab → click **Tennis Slot Checker** → **Run workflow** to tes
 
 ---
 
+## Cart-Hold Bot (`hold.py`)
+
+Some bookings can't be freely cancelled — cancellation is only possible up to 24h in advance,
+otherwise the payment is lost. `hold.py` works around this by keeping one specific slot in your
+cart (which reserves it for 15 minutes) without actually checking out, refreshing the hold every
+few minutes so you have time to decide whether you actually want to book it. **It never completes
+checkout itself** — when you decide to book, open the site yourself in your own browser (same
+account, same cart) and check out there.
+
+Run it locally (manual/local use only — not wired into GitHub Actions):
+
+```bash
+source .venv/bin/activate
+python3 hold.py --court "Tennisplatz 6" --date 2026-09-07 --time 17:00
+```
+
+`--court`/`--date`/`--time` can also be set via `TARGET_COURT`, `TARGET_DATE` (`YYYY-MM-DD`), and
+`TARGET_TIME` (`HH:MM`) in `.env` instead of CLI args.
+
+| Variable | Default | Description |
+|---|---|---|
+| `HOLD_REFRESH_SECONDS` | `780` (13 min) | How often to refresh the cart hold (must stay under the 15-min limit) |
+| `MAX_HOLD_SECONDS` | `10800` (3 h) | Auto-release the hold after this long, so it doesn't block the slot indefinitely. `0` = no cap (not recommended) |
+| `REMINDER_INTERVAL_SECONDS` | `3600` (1 h) | How often to send a Telegram reminder that the hold is still active |
+
+The bot exits and sends a Telegram alert if the target slot becomes unavailable (e.g. someone else
+booked it) or once `MAX_HOLD_SECONDS` is reached — in the latter case the hold simply stops
+refreshing and lapses naturally within 15 minutes.
+
+---
+
 ## Notes
 
 - `.env` is gitignored — your credentials never leave your machine.
 - The script re-authenticates automatically if the session expires.
 - Unwanted resource categories are filtered out automatically based on internal configuration.
+- Holding a slot in your cart without booking it blocks that slot for everyone else during the
+  hold — please use `hold.py` responsibly and keep `MAX_HOLD_SECONDS` reasonable.
+
 
